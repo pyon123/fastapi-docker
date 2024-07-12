@@ -24,6 +24,10 @@ async def execute_code(request: execute.RequestDTO):
             result = await container.execute()
             print(result)
             return execute.ResponseDTO(result=result)
+        
+        except ValueError as e:
+            print(f"Validation error: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Validation error: {str(e)}")
 
         except RuntimeError as e:
             print(f"Execution error: {str(e)}")
