@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from enum import Enum
 from services.docker import ResourceType
 
