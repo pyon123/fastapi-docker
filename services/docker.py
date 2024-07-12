@@ -55,6 +55,21 @@ class DockerContainer:
                 'detach': True,
             }
 
+            if self.resource.cpu is not None:
+                run_kwargs['cpu_count'] = self.resource.cpu
+            if self.resource.gpu is not None:
+                run_kwargs['runtime'] = 'nvidia'
+                # run_kwargs['environment'] = ['NVIDIA_VISIBLE_DEVICES=all']
+                run_kwargs['device_requests'] = [
+                    docker.types.DeviceRequest(count=self.resource.gpu, capabilities=[['gpu']])
+                ]
+            if self.resource.ram is not None:
+                run_kwargs['mem_limit'] = self.resource.ram
+            # if self.resource.storage is not None:
+            #     run_kwargs['storage_opt'] = {
+            #         'size': self.resource.storage
+            #     }
+
             container = client.containers.run(**run_kwargs)
 
             container.wait()
