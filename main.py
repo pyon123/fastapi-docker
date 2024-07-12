@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 from dto import execute
 from dto.execute import TaskType
+from services.docker import DockerContainer
 
 load_dotenv()
 
@@ -18,7 +19,15 @@ def health_check():
 @app.post("/execute", response_model=execute.ResponseDTO)
 async def execute_code(request: execute.RequestDTO):
     if request.task_type == TaskType.execute_code:
-        return execute.ResponseDTO(result="result")
+        container = DockerContainer(request.resources, request.code)
+        try:
+            result = await container.execute()
+            print(result)
+            return execute.ResponseDTO(result=result)
+
+        except RuntimeError as e:
+            print(f"Execution error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Internal server error")
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported task type: {request.task_type}")
     
