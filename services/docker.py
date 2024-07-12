@@ -1,5 +1,6 @@
 import docker
 from pydantic import BaseModel, field_validator
+import requests.exceptions
 
 class ResourceType(BaseModel):
     cpu: str
@@ -20,10 +21,11 @@ class ResourceType(BaseModel):
         return v
     
 class DockerContainer:
-    def __init__(self, resource: ResourceType, code: str, image: str = 'python:3.9-slim'):
+    def __init__(self, resource: ResourceType, code: str, image: str = 'python:3.9-slim', timeout: int = 30):
         self.image = image
         self.resource = resource
         self.code = code
+        self.timeout = timeout
 
     def validate_resources(self):
         # check available CPU
@@ -72,9 +74,16 @@ class DockerContainer:
 
             container = client.containers.run(**run_kwargs)
 
-            container.wait()
+            try:
+                container.wait(timeout=self.timeout)
+            except requests.exceptions.ReadTimeout:
+                # container.kill()
+                container.stop()
+                container.remove(force=True)
+                raise RuntimeError("Container execution timed out")
+
             logs = container.logs().decode('utf-8')
-            container.remove()
+            container.remove(force=True)
 
             return logs
         except Exception as e:
